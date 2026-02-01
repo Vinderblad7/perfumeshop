@@ -2,8 +2,8 @@ from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView, DetailView
 from django.template.response import TemplateResponse
 from django.db.models import Q
+from django.http import HttpResponse 
 from .models import Category, Brand, Product
-
 
 class IndexView(TemplateView):
     template_name = 'main/base.html'
@@ -12,7 +12,6 @@ class IndexView(TemplateView):
         context = super().get_context_data(**kwargs)
         context['categories'] = Category.objects.all()
         context['brands'] = Brand.objects.all()
-        context['current_category'] = None
         return context
 
     def get(self, request, *args, **kwargs):
@@ -25,25 +24,21 @@ class IndexView(TemplateView):
 class CatalogView(TemplateView):
     template_name = 'main/base.html'
 
-    FILTER_MAPPING = {
-        'brand': lambda queryset, value: queryset.filter(brand__slug=value),
-        'category': lambda queryset, value: queryset.filter(category__slug=value),
-    }
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         category_slug = kwargs.get('category_slug')
-        brand_slug = kwargs.get('brand_slug')
+        brand_slug = kwargs.get('brand_slug') or self.request.GET.get('brand')
+        category_from_get = self.request.GET.get('category')
 
-        categories = Category.objects.all()
-        brands = Brand.objects.all()
         products = Product.objects.all().order_by('-created_at')
-
         current_category = None
         current_brand = None
 
         if category_slug:
             current_category = get_object_or_404(Category, slug=category_slug)
+            products = products.filter(category=current_category)
+        elif category_from_get:
+            current_category = get_object_or_404(Category, slug=category_from_get)
             products = products.filter(category=current_category)
 
         if brand_slug:
@@ -56,66 +51,83 @@ class CatalogView(TemplateView):
                 Q(name__icontains=query) | Q(description__icontains=query)
             )
 
-        filter_params = {}
-        for param, filter_func in self.FILTER_MAPPING.items():
-            value = self.request.GET.get(param)
-            if value:
-                products = filter_func(products, value)
-                filter_params[param] = value
-            else:
-                filter_params[param] = ''
-
-        filter_params['q'] = query or ''
-
         context.update({
-            'categories': categories,
-            'brands': brands,
+            'categories': Category.objects.all(),
+            'brands': Brand.objects.all(),
             'products': products,
             'current_category': current_category,
             'current_brand': current_brand,
-            'filter_params': filter_params,
             'search_query': query or ''
         })
-
-        if self.request.GET.get('show_search') == 'true':
-            context['show_search'] = True
-        elif self.request.GET.get('reset_search') == 'true':
-            context['reset_search'] = True
-
         return context
 
     def get(self, request, *args, **kwargs):
+        # 1. СБРОС ПОИСКА: возвращаем ссылку О НАС и кнопку ПОИСК в правильный контейнер
+        if request.headers.get('HX-Request') and request.GET.get('reset_search') == 'true':
+            return HttpResponse('''
+                <a href="/about/" 
+                   hx-get="/about/" 
+                   hx-target="#main-content" 
+                   hx-push-url="true" 
+                   class="text-sm font-medium uppercase hover:text-gray-300 transition-colors">О НАС</a>
+
+                <button hx-get="/catalog/?show_search=true" 
+                        hx-target="#mobile-search-wrapper" 
+                        hx-swap="innerHTML" 
+                        class="text-sm font-medium uppercase hover:text-gray-300 transition-colors">ПОИСК</button>
+            ''')
+
         context = self.get_context_data(**kwargs)
+        
         if request.headers.get('HX-Request'):
-            if context.get('show_search'):
+            # 2. Показ инпута поиска
+            if request.GET.get('show_search') == 'true':
                 return TemplateResponse(request, 'main/search_input.html', context)
-            elif context.get('reset_search'):
-                return TemplateResponse(request, 'main/search_button.html', {})
-            template = 'main/filter_modal.html' if request.GET.get('show_filters') == 'true' else 'main/catalog.html'
-            return TemplateResponse(request, template, context)
+            
+            # 3. Показ модалки фильтров
+            if request.GET.get('show_filters') == 'true':
+                return TemplateResponse(request, 'main/filter_modal.html', context)
+            
+            # 4. Контент каталога
+            return TemplateResponse(request, 'main/catalog.html', context)
+        
         return TemplateResponse(request, self.template_name, context)
 
 
 class ProductDetailView(DetailView):
     model = Product
     template_name = 'main/base.html'
-    slug_field = 'slug'
-    slug_url_kwarg = 'slug'
+    context_object_name = 'product'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        product = self.get_object()
+        product = self.object
         context['categories'] = Category.objects.all()
         context['brands'] = Brand.objects.all()
         context['related_products'] = Product.objects.filter(
             category=product.category
-        ).exclude(id=product.id)[:4]
-        context['current_category'] = product.category.slug if product.category else None
+        ).exclude(id=product.id)[:5]
         return context
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
-        context = self.get_context_data(**kwargs)
+        context = self.get_context_data()
         if request.headers.get('HX-Request'):
             return TemplateResponse(request, 'main/product_detail.html', context)
+        return TemplateResponse(request, self.template_name, context)
+    
+
+class AboutView(TemplateView):
+    template_name = 'main/base.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.all()
+        context['is_about'] = True 
+        return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        if request.headers.get('HX-Request'):
+            return TemplateResponse(request, 'main/about.html', context)
         return TemplateResponse(request, self.template_name, context)

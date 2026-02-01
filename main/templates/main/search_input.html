@@ -1,0 +1,32 @@
+<div class="relative inline-block" id="active-search-container">
+    <input type="text" 
+           id="search-input" 
+           name="q" 
+           placeholder="ПОИСК" 
+           value="{{ search_query|default:'' }}"
+           hx-get="{% url 'main:catalog_all' %}" 
+           hx-target="#main-content" 
+           hx-trigger="keyup delay:500ms changed"
+           hx-push-url="true"
+           class="w-48 bg-white/10 border border-white/20 py-2 px-3 text-sm font-medium uppercase focus:outline-none focus:border-white text-white placeholder-white/50">
+    
+    <button type="button"
+            class="absolute right-2 top-1/2 -translate-y-1/2 text-white/50 hover:text-white text-lg"
+            hx-get="{% url 'main:catalog_all' %}?reset_search=true" 
+            hx-target="#mobile-search-wrapper" 
+            hx-swap="innerHTML">
+        ×
+    </button>
+</div>
+
+<script>
+    (function() {
+        const input = document.getElementById('search-input');
+        if (input) {
+            input.focus();
+            const val = input.value;
+            input.value = '';
+            input.value = val;
+        }
+    })();
+</script>

@@ -4,99 +4,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Parfume30{% endblock %}</title>
+    <title>{% block title %}Perfume30{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .product-image { transition: transform 0.3s ease; }
-        .product-card:hover .product-image { transform: scale(1.05); }
-        .nav-link { position: relative; transition: all 0.3s ease; }
-        .nav-link:hover::after, .nav-link.active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 100%;
-            height: 1px;
-            background-color: white;
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color:#000000; color: white; 
+            background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), 
+                              url("https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&q=80&w=1920");
+            background-attachment: fixed; background-size: cover; background-position: center;
         }
+        .nav-link { position: relative; transition: all 0.3s ease; }
+        .nav-link:hover::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 1px; background-color: white; }
         .mobile-menu { transform: translateX(-100%); transition: transform 0.3s ease-in-out; }
         .mobile-menu.open { transform: translateX(0); }
-        .hamburger { cursor: pointer; }
-        .hamburger span { display: block; width: 25px; height: 2px; background-color: white; margin: 5px 0; transition: 0.3s; }
-        .hamburger.active span:nth-child(1) { transform: rotate(-45deg) translate(-5px, 6px); }
-        .hamburger.active span:nth-child(2) { opacity: 0; }
-        .hamburger.active span:nth-child(3) { transform: rotate(45deg) translate(-5px, -6px); }
         .overlay { opacity: 0; visibility: hidden; transition: all 0.3s ease-in-out; }
         .overlay.active { opacity: 1; visibility: visible; }
-        .htmx-indicator { opacity: 0; transition: opacity 200ms ease-in; }
-        .htmx-request .htmx-indicator { opacity: 1; }
+        .hamburger span { display: block; width: 25px; height: 2px; background-color: white; margin: 5px 0; transition: 0.3s; }
     </style>
 </head>
-<body style="background-color:#14312F; color: white">
+<body>
+    <div id="overlay" class="overlay fixed inset-0 bg-black bg-opacity-70 z-40 md:hidden"></div>
 
-    <div id="overlay" class="overlay fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"></div>
-
-    <div id="mobileMenu" class="mobile-menu fixed top-0 left-0 w-80 h-full bg-[#14312F] z-50 md:hidden shadow-lg border-r border-white/10">
+    <div id="mobileMenu" class="mobile-menu fixed top-0 left-0 w-80 h-full bg-[#000000] z-50 md:hidden shadow-lg border-r border-white/10">
         <div class="p-6">
             <div class="flex justify-between items-center mb-8">
-                <h2 class="text-lg font-bold tracking-tight">Parfume30</h2>
-                <button id="closeMenu" class="hamburger active"><span></span><span></span><span></span></button>
+                <h2 class="text-lg font-bold">Parfume30</h2>
+                <button id="closeMenu" class="hamburger"><span></span><span></span><span></span></button>
             </div>
             <nav class="space-y-6">
-                <a href="/" class="mobile-nav-link block text-lg font-medium text-white py-2 border-b border-white/10">ГЛАВНАЯ</a>
+                <a href="/" class="block text-lg font-medium py-2 border-b border-white/10">ГЛАВНАЯ</a>
                 {% for category in categories %}
-                <a href="{% url 'main:catalog' category.slug %}" hx-get="{% url 'main:catalog' category.slug %}" hx-target="#main-content" hx-push-url="true"
-                   class="mobile-nav-link block text-lg font-medium text-white py-2 border-b border-white/10">
-                   {{ category.name|upper }}
-                </a>
+                <a href="{% url 'main:catalog' category.slug %}" hx-get="{% url 'main:catalog' category.slug %}" hx-target="#main-content" hx-push-url="true" class="block text-lg font-medium py-2 border-b border-white/10">{{ category.name|upper }}</a>
                 {% endfor %}
-                <a href="{% url 'main:about' %}" hx-get="{% url 'main:about' %}" hx-target="#main-content" hx-push-url="true"
-                   class="mobile-nav-link block text-lg font-medium text-white py-2 border-b border-white/10">О НАС</a>
+                <a href="{% url 'main:price_list' %}" hx-get="{% url 'main:price_list' %}" hx-target="#main-content" hx-push-url="true" class="block text-lg font-medium py-2 border-b border-white/10">ЦЕНЫ</a>
+                <a href="{% url 'main:about' %}" hx-get="{% url 'main:about' %}" hx-target="#main-content" hx-push-url="true" class="block text-lg font-medium py-2 border-b border-white/10">О НАС</a>
             </nav>
         </div>
     </div>
 
-    <header class="sticky top-0 z-30 bg-[#14312F]/80 backdrop-blur-md">
+    <header class="sticky top-0 z-30 bg-black/80 backdrop-blur-md border-b border-white/5">
         <div class="mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
-                
-                <button id="menuToggle" class="hamburger md:hidden relative z-50"><span></span><span></span><span></span></button>
-                
-                <div class="flex items-center relative z-50">
-                    <a href="/" class="flex items-center space-x-2 group cursor-pointer border-none outline-none">
-                        <img src="{% static 'images/logo.png' %}" alt="Logo" class="h-16 sm:h-20 transition-opacity group-hover:opacity-80">
-                        <span class="text-xl sm:text-2xl font-bold tracking-tight text-white group-hover:text-gray-300 transition-colors">Perfume30</span>
-                    </a>
-                </div>
-
+                <button id="menuToggle" class="hamburger md:hidden"><span></span><span></span><span></span></button>
+                <a href="/" class="flex items-center space-x-2">
+                    <img src="{% static 'images/logo.png' %}" alt="Logo" class="h-12 sm:h-16">
+                    <span class="text-xl font-bold">Perfume30</span>
+                </a>
                 <nav class="hidden md:flex space-x-8">
                     {% for category in categories %}
-                    <a href="{% url 'main:catalog' category.slug %}" hx-get="{% url 'main:catalog' category.slug %}" hx-target="#main-content" hx-push-url="true"
-                       class="nav-link text-sm font-medium text-white hover:text-gray-300">
-                       {{ category.name|upper }}
-                    </a>
+                    <a href="{% url 'main:catalog' category.slug %}" hx-get="{% url 'main:catalog' category.slug %}" hx-target="#main-content" hx-push-url="true" class="nav-link text-sm font-medium uppercase">{{ category.name }}</a>
                     {% endfor %}
                 </nav>
-
-                <div class="hidden md:flex items-center space-x-8">
-                    <div id="mobile-search-wrapper" class="flex items-center space-x-8">
-                        <a href="{% url 'main:about' %}" 
-                           hx-get="{% url 'main:about' %}" 
-                           hx-target="#main-content" 
-                           hx-push-url="true" 
-                           class="text-sm font-medium uppercase hover:text-gray-300 transition-colors">О НАС</a>
-
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="{% url 'main:price_list' %}" hx-get="{% url 'main:price_list' %}" hx-target="#main-content" hx-push-url="true" class="nav-link text-sm font-medium uppercase">ЦЕНЫ</a>
+                    <a href="{% url 'main:about' %}" hx-get="{% url 'main:about' %}" hx-target="#main-content" hx-push-url="true" class="nav-link text-sm font-medium uppercase">О НАС</a>
+                    
+                    <div id="search-slot" class="flex items-center">
                         <button hx-get="{% url 'main:catalog_all' %}?show_search=true" 
-                                hx-target="#mobile-search-wrapper" 
+                                hx-target="#search-slot" 
                                 hx-swap="innerHTML" 
-                                class="text-sm font-medium uppercase hover:text-gray-300 transition-colors">ПОИСК</button>
+                                class="text-sm font-medium uppercase hover:text-gray-300">ПОИСК</button>
                     </div>
                 </div>
-
             </div>
         </div>
     </header>
@@ -107,25 +80,19 @@
                 {% include 'main/product_detail.html' %}
             {% elif is_about %}
                 {% include 'main/about.html' %}
+            {% elif is_price_list %}
+                {% include 'main/price_list.html' %}
             {% elif products %}
                 {% include 'main/catalog.html' %}
             {% else %}
-                <main class="mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <div class="text-center py-20">
-                        <h2 class="text-4xl font-bold tracking-tight text-white mb-4">Perfume30</h2>
-                        <p class="text-lg text-gray-300 mb-8">Выберите категорию для просмотра коллекции</p>
-                        
-                        <div class="flex flex-wrap justify-center gap-6 max-w-2xl mx-auto">
-                            {% for category in categories %}
-                            <a href="{% url 'main:catalog' category.slug %}" 
-                               hx-get="{% url 'main:catalog' category.slug %}" 
-                               hx-target="#main-content" 
-                               hx-push-url="true"
-                               class="flex-1 min-w-[280px] p-8 border border-white/20 hover:border-white transition-colors text-center">
-                                <h3 class="text-xl font-bold">{{ category.name|upper }}</h3>
-                            </a>
-                            {% endfor %}    
-                        </div>
+                <main class="mx-auto px-4 py-20 text-center">
+                    <h2 class="text-4xl font-bold mb-8 uppercase tracking-widest">Perfume30</h2>
+                    <div class="flex flex-wrap justify-center gap-6 max-w-2xl mx-auto">
+                        {% for category in categories %}
+                        <a href="{% url 'main:catalog' category.slug %}" hx-get="{% url 'main:catalog' category.slug %}" hx-target="#main-content" hx-push-url="true" class="flex-1 min-w-[250px] p-8 border border-white/20 hover:border-white transition-colors">
+                            <h3 class="text-xl font-bold uppercase">{{ category.name }}</h3>
+                        </a>
+                        {% endfor %}    
                     </div>
                 </main>
             {% endif %}
@@ -138,21 +105,13 @@
             const closeMenu = document.getElementById('closeMenu');
             const mobileMenu = document.getElementById('mobileMenu');
             const overlay = document.getElementById('overlay');
-
             const toggle = () => {
-                if(!mobileMenu) return;
                 mobileMenu.classList.toggle('open');
                 overlay.classList.toggle('active');
                 document.body.style.overflow = mobileMenu.classList.contains('open') ? 'hidden' : '';
             };
-
-            if(menuToggle) menuToggle.addEventListener('click', toggle);
-            if(closeMenu) closeMenu.addEventListener('click', toggle);
-            if(overlay) overlay.addEventListener('click', toggle);
-            
-            document.addEventListener('htmx:afterRequest', (event) => { 
-                if(mobileMenu && mobileMenu.classList.contains('open')) toggle(); 
-            });
+            [menuToggle, closeMenu, overlay].forEach(el => el?.addEventListener('click', toggle));
+            document.addEventListener('htmx:afterRequest', () => { if(mobileMenu.classList.contains('open')) toggle(); });
         });
     </script>
 </body>

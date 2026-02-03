@@ -1,7 +1,7 @@
 {% block content %}
 <main class="mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+    <div class="flex flex-row justify-between items-center mb-8">
         <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white uppercase">
             {% if current_category %}
                 {{ current_category.name }}
@@ -9,11 +9,21 @@
                 ВСЕ ТОВАРЫ
             {% endif %}
         </h2>
+
+        <button hx-get="{% if current_category %}{% url 'main:catalog' current_category.slug %}{% else %}{% url 'main:catalog_all' %}{% endif %}?show_filters=true" 
+                hx-target="#filter-modal" 
+                hx-swap="innerHTML"
+                onclick="document.getElementById('filter-modal').classList.remove('hidden')"
+                class="flex items-center space-x-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest hover:text-gray-400 transition-colors border border-white/20 py-2 px-4 rounded-sm">
+            <span>Фильтры</span>
+            <svg class="w-3 h-3 sm:w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+            </svg>
+        </button>
     </div>
 
     {% if products %}
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
-
         {% for product in products %}
         <div class="group cursor-pointer"
              hx-get="{% url 'main:product_detail' product.slug %}"
@@ -22,11 +32,9 @@
 
             <div class="aspect-[3/4] bg-gray-100 flex items-center justify-center overflow-hidden mb-3 rounded-sm relative">
                 {% if product.main_image %}
-                    <img
-                        src="{{ product.main_image.url }}"
-                        alt="{{ product.name }}"
-                        class="w-auto h-[85%] object-contain transition-transform duration-300 group-hover:scale-105"
-                    >
+                    <img src="{{ product.main_image.url }}"
+                         alt="{{ product.name }}"
+                         class="w-auto h-[85%] object-contain transition-transform duration-300 group-hover:scale-105">
                 {% else %}
                     <div class="w-full h-full bg-gray-200 flex items-center justify-center">
                         <span class="text-gray-400 text-sm uppercase">НЕТ ФОТО</span>
@@ -38,22 +46,16 @@
                 <p class="text-[10px] sm:text-xs text-gray-400 uppercase mb-1 tracking-wide">
                     {{ product.brand.name }}
                 </p>
-
                 <h3 class="text-xs sm:text-sm font-bold text-white uppercase leading-tight line-clamp-2">
                     {{ product.name }}
                 </h3>
             </div>
-
         </div>
         {% endfor %}
-
     </div>
-
     {% else %}
     <div class="text-center py-20">
-        <h3 class="text-2xl font-bold text-white mb-4 uppercase">
-            Товары не найдены
-        </h3>
+        <h3 class="text-2xl font-bold text-white mb-4 uppercase">Товары не найдены</h3>
         <p class="text-gray-300">
             {% if current_category %}
                 В этой категории пока нет доступных товаров.
@@ -66,6 +68,9 @@
         </a>
     </div>
     {% endif %}
+
+    <div id="filter-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 hidden backdrop-blur-sm">
+        </div>
 
 </main>
 {% endblock %}
